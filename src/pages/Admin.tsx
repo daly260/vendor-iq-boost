@@ -4,99 +4,28 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Edit, Trash2, Play, Users, Settings, BookOpen, Award, BarChart3 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Plus, Edit, Trash2, Play, Users, Settings, BookOpen, Award, BarChart3, Download } from "lucide-react";
+import { LessonForm } from "@/components/LessonForm";
+import { QuizForm } from "@/components/QuizForm";
+import { useLearning } from "@/contexts/LearningContext";
+import { useToast } from "@/hooks/use-toast";
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState("lessons");
+  const [showLessonForm, setShowLessonForm] = useState(false);
+  const [showQuizForm, setShowQuizForm] = useState(false);
+  const [editingLesson, setEditingLesson] = useState(null);
+  const [editingQuiz, setEditingQuiz] = useState(null);
+  const [xpSettings, setXpSettings] = useState({
+    videoXP: 10,
+    quizXP: 20,
+    streakXP: 5
+  });
 
-  const lessons = [
-    {
-      id: 1,
-      title: "How to Upload Products like a Boss 📦",
-      videoUrl: "https://youtube.com/watch?v=example1",
-      levelRequired: 1,
-      status: "published",
-      views: 245
-    },
-    {
-      id: 2,
-      title: "Price Like a Pro: Strategy Secrets 💰",
-      videoUrl: "https://youtube.com/watch?v=example2",
-      levelRequired: 2,
-      status: "draft",
-      views: 0
-    },
-    {
-      id: 3,
-      title: "Customer Reviews: Turn Feedback into Gold ⭐",
-      videoUrl: "https://youtube.com/watch?v=example3",
-      levelRequired: 2,
-      status: "published",
-      views: 189
-    }
-  ];
-
-  const quizzes = [
-    {
-      id: 1,
-      lessonId: 1,
-      question: "What's the best way to upload a product image?",
-      options: ["Use highest resolution", "Compress first", "Add watermark", "All of the above"],
-      correctAnswer: 1,
-      points: 20
-    },
-    {
-      id: 2,
-      lessonId: 2,
-      question: "Which pricing strategy works best for new products?",
-      options: ["Always lowest price", "Market research first", "Copy competitors", "Random pricing"],
-      correctAnswer: 1,
-      points: 25
-    }
-  ];
-
-  const vendors = [
-    {
-      id: 1,
-      username: "sarah_seller",
-      level: 3,
-      xp: 892,
-      lessonsCompleted: 8,
-      quizzesPassed: 6,
-      lastActive: "2 hours ago"
-    },
-    {
-      id: 2,
-      username: "mike_merchant",
-      level: 2,
-      xp: 456,
-      lessonsCompleted: 5,
-      quizzesPassed: 3,
-      lastActive: "1 day ago"
-    },
-    {
-      id: 3,
-      username: "ana_amazing",
-      level: 4,
-      xp: 1203,
-      lessonsCompleted: 12,
-      quizzesPassed: 10,
-      lastActive: "30 minutes ago"
-    }
-  ];
-
-  const gamificationSettings = {
-    xpPerVideo: 10,
-    xpPerQuiz: 20,
-    xpPerStreak: 5,
-    levels: [
-      { level: 1, title: "Marketplace Newbie", requiredXp: 0 },
-      { level: 2, title: "Marketplace Explorer", requiredXp: 100 },
-      { level: 3, title: "Dashboard Guru", requiredXp: 300 },
-      { level: 4, title: "Listing Legend", requiredXp: 600 },
-      { level: 5, title: "Super Seller", requiredXp: 1000 }
-    ]
-  };
+  const { lessons, quizzes, vendors, deleteLesson, deleteQuiz } = useLearning();
+  const { toast } = useToast();
 
   const tabs = [
     { id: "lessons", label: "Manage Lessons", icon: BookOpen },
@@ -105,6 +34,62 @@ const Admin = () => {
     { id: "settings", label: "Gamification", icon: Settings },
     { id: "analytics", label: "Analytics", icon: BarChart3 }
   ];
+
+  const handleDeleteLesson = (lessonId: number) => {
+    if (confirm("Are you sure you want to delete this lesson? This will also delete associated quizzes.")) {
+      deleteLesson(lessonId);
+      toast({
+        title: "Lesson Deleted",
+        description: "The lesson and its quizzes have been removed.",
+      });
+    }
+  };
+
+  const handleDeleteQuiz = (quizId: number) => {
+    if (confirm("Are you sure you want to delete this quiz?")) {
+      deleteQuiz(quizId);
+      toast({
+        title: "Quiz Deleted",
+        description: "The quiz has been removed.",
+      });
+    }
+  };
+
+  const handleEditLesson = (lesson: any) => {
+    setEditingLesson(lesson);
+    setShowLessonForm(true);
+  };
+
+  const handleEditQuiz = (quiz: any) => {
+    setEditingQuiz(quiz);
+    setShowQuizForm(true);
+  };
+
+  const handleExportCSV = () => {
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + "Username,Email,Level,XP,Lessons Completed,Quizzes Passed,Last Active\n"
+      + vendors.map(v => `${v.username},${v.email},${v.level},${v.xp},${v.lessonsCompleted},${v.quizzesPassed},${v.lastActive}`).join("\n");
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "vendor-progress.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({
+      title: "CSV Exported",
+      description: "Vendor progress data has been downloaded.",
+    });
+  };
+
+  const handleUpdateXPSettings = () => {
+    toast({
+      title: "Settings Updated",
+      description: "XP rewards have been updated successfully.",
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-6">
@@ -145,7 +130,13 @@ const Admin = () => {
                 <BookOpen className="w-5 h-5" />
                 <span>Lesson Management</span>
               </CardTitle>
-              <Button className="bg-green-500 hover:bg-green-600">
+              <Button 
+                className="bg-green-500 hover:bg-green-600"
+                onClick={() => {
+                  setEditingLesson(null);
+                  setShowLessonForm(true);
+                }}
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Add New Lesson
               </Button>
@@ -157,7 +148,7 @@ const Admin = () => {
                     <TableHead>Title</TableHead>
                     <TableHead>Level Required</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Views</TableHead>
+                    <TableHead>Points</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -169,20 +160,29 @@ const Admin = () => {
                         <Badge variant="outline">Level {lesson.levelRequired}</Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge className={lesson.status === "published" ? "bg-green-500" : "bg-yellow-500"}>
+                        <Badge className={lesson.status === "completed" ? "bg-green-500" : "bg-yellow-500"}>
                           {lesson.status}
                         </Badge>
                       </TableCell>
-                      <TableCell>{lesson.views}</TableCell>
+                      <TableCell>{lesson.points} XP</TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
                           <Button size="sm" variant="outline">
                             <Play className="w-3 h-3" />
                           </Button>
-                          <Button size="sm" variant="outline">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleEditLesson(lesson)}
+                          >
                             <Edit className="w-3 h-3" />
                           </Button>
-                          <Button size="sm" variant="outline" className="text-red-500">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="text-red-500"
+                            onClick={() => handleDeleteLesson(lesson.id)}
+                          >
                             <Trash2 className="w-3 h-3" />
                           </Button>
                         </div>
@@ -202,7 +202,13 @@ const Admin = () => {
                 <Award className="w-5 h-5" />
                 <span>Quiz Management</span>
               </CardTitle>
-              <Button className="bg-purple-500 hover:bg-purple-600">
+              <Button 
+                className="bg-purple-500 hover:bg-purple-600"
+                onClick={() => {
+                  setEditingQuiz(null);
+                  setShowQuizForm(true);
+                }}
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Add New Quiz
               </Button>
@@ -214,12 +220,26 @@ const Admin = () => {
                     <div className="flex justify-between items-start mb-3">
                       <div>
                         <h4 className="font-semibold">{quiz.question}</h4>
-                        <p className="text-sm text-gray-600">Linked to Lesson #{quiz.lessonId}</p>
+                        <p className="text-sm text-gray-600">
+                          Linked to: {lessons.find(l => l.id === quiz.lessonId)?.title}
+                        </p>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Badge className="bg-purple-500">{quiz.points} XP</Badge>
-                        <Button size="sm" variant="outline">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleEditQuiz(quiz)}
+                        >
                           <Edit className="w-3 h-3" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="text-red-500"
+                          onClick={() => handleDeleteQuiz(quiz.id)}
+                        >
+                          <Trash2 className="w-3 h-3" />
                         </Button>
                       </div>
                     </div>
@@ -249,13 +269,17 @@ const Admin = () => {
                 <Users className="w-5 h-5" />
                 <span>Vendor Progress Tracking</span>
               </CardTitle>
-              <Button variant="outline">Export CSV</Button>
+              <Button variant="outline" onClick={handleExportCSV}>
+                <Download className="w-4 h-4 mr-2" />
+                Export CSV
+              </Button>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Username</TableHead>
+                    <TableHead>Email</TableHead>
                     <TableHead>Level</TableHead>
                     <TableHead>XP</TableHead>
                     <TableHead>Lessons</TableHead>
@@ -267,6 +291,7 @@ const Admin = () => {
                   {vendors.map((vendor) => (
                     <TableRow key={vendor.id}>
                       <TableCell className="font-medium">{vendor.username}</TableCell>
+                      <TableCell>{vendor.email}</TableCell>
                       <TableCell>
                         <Badge variant="outline">Level {vendor.level}</Badge>
                       </TableCell>
@@ -289,19 +314,36 @@ const Admin = () => {
                 <CardTitle>XP Rewards</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span>Watching a video</span>
-                  <Badge>{gamificationSettings.xpPerVideo} XP</Badge>
+                <div>
+                  <Label htmlFor="videoXP">Watching a video</Label>
+                  <Input
+                    id="videoXP"
+                    type="number"
+                    value={xpSettings.videoXP}
+                    onChange={(e) => setXpSettings({...xpSettings, videoXP: parseInt(e.target.value)})}
+                  />
                 </div>
-                <div className="flex justify-between items-center">
-                  <span>Passing a quiz</span>
-                  <Badge>{gamificationSettings.xpPerQuiz} XP</Badge>
+                <div>
+                  <Label htmlFor="quizXP">Passing a quiz</Label>
+                  <Input
+                    id="quizXP"
+                    type="number"
+                    value={xpSettings.quizXP}
+                    onChange={(e) => setXpSettings({...xpSettings, quizXP: parseInt(e.target.value)})}
+                  />
                 </div>
-                <div className="flex justify-between items-center">
-                  <span>Daily login streak</span>
-                  <Badge>{gamificationSettings.xpPerStreak} XP</Badge>
+                <div>
+                  <Label htmlFor="streakXP">Daily login streak</Label>
+                  <Input
+                    id="streakXP"
+                    type="number"
+                    value={xpSettings.streakXP}
+                    onChange={(e) => setXpSettings({...xpSettings, streakXP: parseInt(e.target.value)})}
+                  />
                 </div>
-                <Button className="w-full">Update Settings</Button>
+                <Button className="w-full" onClick={handleUpdateXPSettings}>
+                  Update Settings
+                </Button>
               </CardContent>
             </Card>
 
@@ -311,7 +353,13 @@ const Admin = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {gamificationSettings.levels.map((level) => (
+                  {[
+                    { level: 1, title: "Marketplace Newbie", requiredXp: 0 },
+                    { level: 2, title: "Marketplace Explorer", requiredXp: 100 },
+                    { level: 3, title: "Dashboard Guru", requiredXp: 300 },
+                    { level: 4, title: "Listing Legend", requiredXp: 600 },
+                    { level: 5, title: "Super Seller", requiredXp: 1000 }
+                  ].map((level) => (
                     <div key={level.level} className="flex justify-between items-center p-2 border rounded">
                       <div>
                         <span className="font-medium">Level {level.level}</span>
@@ -334,32 +382,51 @@ const Admin = () => {
                 <CardTitle className="text-lg">Total Vendors</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-blue-600">127</div>
-                <p className="text-sm text-gray-600">+12 this week</p>
+                <div className="text-3xl font-bold text-blue-600">{vendors.length}</div>
+                <p className="text-sm text-gray-600">+2 this week</p>
               </CardContent>
             </Card>
 
             <Card className="shadow-lg">
               <CardHeader>
-                <CardTitle className="text-lg">Lessons Completed</CardTitle>
+                <CardTitle className="text-lg">Total Lessons</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-green-600">1,429</div>
-                <p className="text-sm text-gray-600">+89 this week</p>
+                <div className="text-3xl font-bold text-green-600">{lessons.length}</div>
+                <p className="text-sm text-gray-600">Active content</p>
               </CardContent>
             </Card>
 
             <Card className="shadow-lg">
               <CardHeader>
-                <CardTitle className="text-lg">Average XP</CardTitle>
+                <CardTitle className="text-lg">Total Quizzes</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-purple-600">347</div>
-                <p className="text-sm text-gray-600">per vendor</p>
+                <div className="text-3xl font-bold text-purple-600">{quizzes.length}</div>
+                <p className="text-sm text-gray-600">Knowledge checks</p>
               </CardContent>
             </Card>
           </div>
         )}
+
+        {/* Forms */}
+        <LessonForm
+          isOpen={showLessonForm}
+          onClose={() => {
+            setShowLessonForm(false);
+            setEditingLesson(null);
+          }}
+          lesson={editingLesson}
+        />
+
+        <QuizForm
+          isOpen={showQuizForm}
+          onClose={() => {
+            setShowQuizForm(false);
+            setEditingQuiz(null);
+          }}
+          quiz={editingQuiz}
+        />
       </div>
     </div>
   );

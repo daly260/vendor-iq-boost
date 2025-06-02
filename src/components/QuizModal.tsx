@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { X, CheckCircle, XCircle } from "lucide-react";
+import { useLearning } from "@/contexts/LearningContext";
 
 interface QuizModalProps {
   isOpen: boolean;
@@ -13,14 +14,18 @@ interface QuizModalProps {
 }
 
 export const QuizModal = ({ isOpen, onClose, lessonTitle, onComplete }: QuizModalProps) => {
+  const { quizzes } = useLearning();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [score, setScore] = useState(0);
   const [showResult, setShowResult] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
 
-  const questions = [
+  // Get quiz questions for this lesson (fallback to default questions if none exist)
+  const questions = quizzes.length > 0 ? quizzes : [
     {
+      id: 1,
+      lessonId: 1,
       question: "What's the secret to writing product descriptions that sell? 🎯",
       options: [
         "Write a novel about the product 📚",
@@ -28,10 +33,13 @@ export const QuizModal = ({ isOpen, onClose, lessonTitle, onComplete }: QuizModa
         "Use as many emojis as possible 😜",
         "Copy from competitors 🙈"
       ],
-      correct: 1,
+      correctAnswer: 1,
+      points: 20,
       explanation: "Benefits tell customers how the product improves their life!"
     },
     {
+      id: 2,
+      lessonId: 2,
       question: "Which product photo gets the most clicks? 📸",
       options: [
         "Blurry but artistic 🎨",
@@ -39,17 +47,18 @@ export const QuizModal = ({ isOpen, onClose, lessonTitle, onComplete }: QuizModa
         "Black and white for drama 🎭",
         "Taken with a potato 🥔"
       ],
-      correct: 1,
+      correctAnswer: 1,
+      points: 20,
       explanation: "Clear, well-lit photos build trust and show quality!"
     }
   ];
 
   const handleAnswerSelect = (answerIndex: number) => {
     setSelectedAnswer(answerIndex);
-    const correct = answerIndex === questions[currentQuestion].correct;
+    const correct = answerIndex === questions[currentQuestion].correctAnswer;
     setIsCorrect(correct);
     if (correct) {
-      setScore(score + 20);
+      setScore(score + questions[currentQuestion].points);
     }
     setShowResult(true);
   };
@@ -61,7 +70,7 @@ export const QuizModal = ({ isOpen, onClose, lessonTitle, onComplete }: QuizModa
       setShowResult(false);
       setIsCorrect(null);
     } else {
-      onComplete(score + (isCorrect ? 20 : 0));
+      onComplete(score + (isCorrect ? questions[currentQuestion].points : 0));
       onClose();
     }
   };
@@ -101,9 +110,9 @@ export const QuizModal = ({ isOpen, onClose, lessonTitle, onComplete }: QuizModa
                   key={index}
                   variant={selectedAnswer === index ? "default" : "outline"}
                   className={`text-left justify-start h-auto p-4 ${
-                    showResult && index === questions[currentQuestion].correct
+                    showResult && index === questions[currentQuestion].correctAnswer
                       ? 'bg-green-100 border-green-500 text-green-800'
-                      : showResult && selectedAnswer === index && index !== questions[currentQuestion].correct
+                      : showResult && selectedAnswer === index && index !== questions[currentQuestion].correctAnswer
                       ? 'bg-red-100 border-red-500 text-red-800'
                       : ''
                   }`}
@@ -133,7 +142,7 @@ export const QuizModal = ({ isOpen, onClose, lessonTitle, onComplete }: QuizModa
                       </p>
                       {isCorrect && (
                         <Badge className="bg-green-500 text-white mt-2">
-                          +20 XP earned!
+                          +{questions[currentQuestion].points} XP earned!
                         </Badge>
                       )}
                     </div>

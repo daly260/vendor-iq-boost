@@ -15,6 +15,7 @@ interface LessonModalProps {
     progress: number;
     status: string;
     points: number;
+    description?: string;
   };
   onComplete: () => void;
 }
@@ -106,6 +107,7 @@ export const LessonModal = ({ isOpen, onClose, lesson, onComplete }: LessonModal
             {/* Lesson Description */}
             <div className="bg-gray-50 rounded-lg p-4">
               <h4 className="font-semibold mb-2">What you'll learn:</h4>
+              <p className="text-sm text-gray-700 mb-3">{lesson.description}</p>
               <ul className="space-y-1 text-sm text-gray-700">
                 <li>• Master the art of product uploads</li>
                 <li>• Learn pro tips for better conversions</li>

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -7,61 +8,23 @@ import { Trophy, Star, Calendar, Users, Coins, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
 import { QuizModal } from "@/components/QuizModal";
 import { LessonModal } from "@/components/LessonModal";
+import { useLearning } from "@/contexts/LearningContext";
 
 const Index = () => {
-  const [currentLevel, setCurrentLevel] = useState(2);
-  const [currentXP, setCurrentXP] = useState(145);
-  const [nextLevelXP] = useState(200);
-  const [dailyStreak] = useState(3);
+  const {
+    currentLevel,
+    currentXP,
+    dailyStreak,
+    lessons,
+    achievements,
+    completeLesson,
+    completeQuiz
+  } = useLearning();
+  
+  const [nextLevelXP] = useState(300);
   const [selectedLesson, setSelectedLesson] = useState<any>(null);
   const [showQuiz, setShowQuiz] = useState(false);
   const [showLesson, setShowLesson] = useState(false);
-
-  const [lessons, setLessons] = useState([
-    {
-      id: 1,
-      title: "How to Upload Products like a Boss 📦",
-      thumbnail: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=400&h=225&fit=crop",
-      progress: 100,
-      status: "completed",
-      levelRequired: 1,
-      points: 25
-    },
-    {
-      id: 2,
-      title: "Price Like a Pro: Strategy Secrets 💰",
-      thumbnail: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=225&fit=crop",
-      progress: 60,
-      status: "in-progress",
-      levelRequired: 2,
-      points: 30
-    },
-    {
-      id: 3,
-      title: "Customer Reviews: Turn Feedback into Gold ⭐",
-      thumbnail: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=225&fit=crop",
-      progress: 0,
-      status: "available",
-      levelRequired: 2,
-      points: 35
-    },
-    {
-      id: 4,
-      title: "Analytics Dashboard: Your Crystal Ball 🔮",
-      thumbnail: "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?w=400&h=225&fit=crop",
-      progress: 0,
-      status: "locked",
-      levelRequired: 3,
-      points: 40
-    }
-  ]);
-
-  const achievements = [
-    { id: 1, title: "Dashboard Ninja", description: "Completed first lesson", unlocked: true, icon: "⚡" },
-    { id: 2, title: "Price Tag Warrior", description: "Mastered pricing strategies", unlocked: false, icon: "💪" },
-    { id: 3, title: "Review Responder", description: "Handled 10 customer reviews", unlocked: false, icon: "🗣️" },
-    { id: 4, title: "Analytics Wizard", description: "Used all dashboard features", unlocked: false, icon: "🧙‍♂️" }
-  ];
 
   const leaderboard = [
     { name: "Sarah M.", level: "Super Seller", xp: 892, avatar: "🌟" },
@@ -69,7 +32,7 @@ const Index = () => {
     { name: "Ana K.", level: "Price Master", xp: 643, avatar: "💎" },
     { name: "You", level: "Marketplace Explorer", xp: currentXP, avatar: "😎" },
     { name: "Tom R.", level: "Newbie Navigator", xp: 89, avatar: "🌱" }
-  ];
+  ].sort((a, b) => b.xp - a.xp);
 
   const getLessonStatusColor = (status: string) => {
     switch (status) {
@@ -89,19 +52,14 @@ const Index = () => {
 
   const handleLessonComplete = () => {
     if (selectedLesson && selectedLesson.status !== "completed") {
-      setCurrentXP(prev => prev + selectedLesson.points);
-      setLessons(prev => prev.map(l => 
-        l.id === selectedLesson.id 
-          ? { ...l, status: "completed", progress: 100 }
-          : l
-      ));
+      completeLesson(selectedLesson.id);
       setShowLesson(false);
       setShowQuiz(true);
     }
   };
 
   const handleQuizComplete = (score: number) => {
-    setCurrentXP(prev => prev + score);
+    completeQuiz(selectedLesson?.id, score);
     setShowQuiz(false);
   };
 
@@ -223,6 +181,7 @@ const Index = () => {
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-3">
+                      <p className="text-sm text-gray-600">{lesson.description}</p>
                       {lesson.progress > 0 && (
                         <div className="space-y-1">
                           <div className="flex justify-between text-sm">
