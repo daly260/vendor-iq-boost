@@ -1,18 +1,23 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Star, Gift, Calendar, Users, Award, Coins, Flag } from "lucide-react";
+import { Trophy, Star, Calendar, Users, Coins, Settings } from "lucide-react";
+import { Link } from "react-router-dom";
+import { QuizModal } from "@/components/QuizModal";
+import { LessonModal } from "@/components/LessonModal";
 
 const Index = () => {
-  const [currentLevel] = useState(2);
-  const [currentXP] = useState(145);
+  const [currentLevel, setCurrentLevel] = useState(2);
+  const [currentXP, setCurrentXP] = useState(145);
   const [nextLevelXP] = useState(200);
   const [dailyStreak] = useState(3);
+  const [selectedLesson, setSelectedLesson] = useState<any>(null);
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [showLesson, setShowLesson] = useState(false);
 
-  const lessons = [
+  const [lessons, setLessons] = useState([
     {
       id: 1,
       title: "How to Upload Products like a Boss 📦",
@@ -49,7 +54,7 @@ const Index = () => {
       levelRequired: 3,
       points: 40
     }
-  ];
+  ]);
 
   const achievements = [
     { id: 1, title: "Dashboard Ninja", description: "Completed first lesson", unlocked: true, icon: "⚡" },
@@ -62,7 +67,7 @@ const Index = () => {
     { name: "Sarah M.", level: "Super Seller", xp: 892, avatar: "🌟" },
     { name: "Mike T.", level: "Listing Legend", xp: 756, avatar: "🚀" },
     { name: "Ana K.", level: "Price Master", xp: 643, avatar: "💎" },
-    { name: "You", level: "Marketplace Explorer", xp: 145, avatar: "😎" },
+    { name: "You", level: "Marketplace Explorer", xp: currentXP, avatar: "😎" },
     { name: "Tom R.", level: "Newbie Navigator", xp: 89, avatar: "🌱" }
   ];
 
@@ -76,13 +81,58 @@ const Index = () => {
     }
   };
 
+  const handleLessonClick = (lesson: any) => {
+    if (lesson.status === "locked") return;
+    setSelectedLesson(lesson);
+    setShowLesson(true);
+  };
+
+  const handleLessonComplete = () => {
+    if (selectedLesson && selectedLesson.status !== "completed") {
+      setCurrentXP(prev => prev + selectedLesson.points);
+      setLessons(prev => prev.map(l => 
+        l.id === selectedLesson.id 
+          ? { ...l, status: "completed", progress: 100 }
+          : l
+      ));
+      setShowLesson(false);
+      setShowQuiz(true);
+    }
+  };
+
+  const handleQuizComplete = (score: number) => {
+    setCurrentXP(prev => prev + score);
+    setShowQuiz(false);
+  };
+
   const getLessonButton = (lesson: any) => {
     if (lesson.status === "completed") {
-      return <Button className="w-full bg-green-500 hover:bg-green-600">Review Again 🔄</Button>;
+      return (
+        <Button 
+          className="w-full bg-green-500 hover:bg-green-600"
+          onClick={() => handleLessonClick(lesson)}
+        >
+          Review Again 🔄
+        </Button>
+      );
     } else if (lesson.status === "in-progress") {
-      return <Button className="w-full bg-blue-500 hover:bg-blue-600">Continue Learning 📚</Button>;
+      return (
+        <Button 
+          className="w-full bg-blue-500 hover:bg-blue-600"
+          onClick={() => handleLessonClick(lesson)}
+        >
+          Continue Learning 📚
+        </Button>
+      );
     } else if (lesson.status === "available") {
-      return <Button className="w-full bg-yellow-500 hover:bg-yellow-600 text-black">Start Lesson 🚀</Button>;
+      return (
+        <Button 
+          className="w-full bg-yellow-500 hover:bg-yellow-600 text-black"
+          onClick={() => handleLessonClick(lesson)}
+        >
+          Start Lesson 🚀
+        </Button>
+      );
     } else {
       return <Button disabled className="w-full">Unlock at Level {lesson.levelRequired} 🔒</Button>;
     }
@@ -91,6 +141,17 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 p-6">
       <div className="max-w-7xl mx-auto space-y-8">
+        {/* Navigation Header */}
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold text-purple-800">🎓 Vendor Learning Center</h1>
+          <Link to="/admin">
+            <Button variant="outline" className="flex items-center space-x-2">
+              <Settings className="w-4 h-4" />
+              <span>Admin Panel</span>
+            </Button>
+          </Link>
+        </div>
+
         {/* Learning Progress Header */}
         <Card className="border-2 border-purple-200 shadow-lg bg-gradient-to-r from-purple-100 to-blue-100">
           <CardHeader className="pb-4">
@@ -144,7 +205,8 @@ const Index = () => {
                       <img 
                         src={lesson.thumbnail} 
                         alt={lesson.title}
-                        className="w-full h-32 object-cover rounded-lg mb-3"
+                        className="w-full h-32 object-cover rounded-lg mb-3 cursor-pointer"
+                        onClick={() => handleLessonClick(lesson)}
                       />
                       <CardTitle className="text-lg">{lesson.title}</CardTitle>
                       <div className="flex items-center justify-between">
@@ -294,6 +356,25 @@ const Index = () => {
             </Card>
           </div>
         </div>
+
+        {/* Modals */}
+        {selectedLesson && (
+          <LessonModal
+            isOpen={showLesson}
+            onClose={() => setShowLesson(false)}
+            lesson={selectedLesson}
+            onComplete={handleLessonComplete}
+          />
+        )}
+
+        {selectedLesson && (
+          <QuizModal
+            isOpen={showQuiz}
+            onClose={() => setShowQuiz(false)}
+            lessonTitle={selectedLesson.title}
+            onComplete={handleQuizComplete}
+          />
+        )}
       </div>
     </div>
   );
