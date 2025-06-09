@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,10 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Edit, Trash2, Play, Users, Settings, BookOpen, Award, BarChart3, Download } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Plus, Edit, Trash2, Play, Users, Settings, BookOpen, Award, BarChart3, Download, MessageSquare, Bug, Lightbulb, Clock, CheckCircle, AlertCircle } from "lucide-react";
 import { LessonForm } from "@/components/LessonForm";
 import { QuizForm } from "@/components/QuizForm";
 import { useLearning } from "@/contexts/LearningContext";
+import { useTickets } from "@/contexts/TicketContext";
 import { useToast } from "@/hooks/use-toast";
 
 const Admin = () => {
@@ -18,6 +19,8 @@ const Admin = () => {
   const [showQuizForm, setShowQuizForm] = useState(false);
   const [editingLesson, setEditingLesson] = useState(null);
   const [editingQuiz, setEditingQuiz] = useState(null);
+  const [selectedTicket, setSelectedTicket] = useState<any>(null);
+  const [adminResponse, setAdminResponse] = useState("");
   const [xpSettings, setXpSettings] = useState({
     videoXP: 10,
     quizXP: 20,
@@ -25,32 +28,34 @@ const Admin = () => {
   });
 
   const { lessons, quizzes, vendors, deleteLesson, deleteQuiz } = useLearning();
+  const { tickets, updateTicketStatus } = useTickets();
   const { toast } = useToast();
 
   const tabs = [
-    { id: "lessons", label: "Manage Lessons", icon: BookOpen },
-    { id: "quizzes", label: "Manage Quizzes", icon: Award },
-    { id: "vendors", label: "Vendor Progress", icon: Users },
+    { id: "lessons", label: "Gérer les Cours", icon: BookOpen },
+    { id: "quizzes", label: "Gérer les Quiz", icon: Award },
+    { id: "tickets", label: "Support Tickets", icon: MessageSquare },
+    { id: "vendors", label: "Progression Vendeurs", icon: Users },
     { id: "settings", label: "Gamification", icon: Settings },
-    { id: "analytics", label: "Analytics", icon: BarChart3 }
+    { id: "analytics", label: "Analytiques", icon: BarChart3 }
   ];
 
   const handleDeleteLesson = (lessonId: number) => {
-    if (confirm("Are you sure you want to delete this lesson? This will also delete associated quizzes.")) {
+    if (confirm("Êtes-vous sûr de vouloir supprimer ce cours ? Cela supprimera aussi les quiz associés.")) {
       deleteLesson(lessonId);
       toast({
-        title: "Lesson Deleted",
-        description: "The lesson and its quizzes have been removed.",
+        title: "Cours Supprimé",
+        description: "Le cours et ses quiz ont été supprimés.",
       });
     }
   };
 
   const handleDeleteQuiz = (quizId: number) => {
-    if (confirm("Are you sure you want to delete this quiz?")) {
+    if (confirm("Êtes-vous sûr de vouloir supprimer ce quiz ?")) {
       deleteQuiz(quizId);
       toast({
-        title: "Quiz Deleted",
-        description: "The quiz has been removed.",
+        title: "Quiz Supprimé",
+        description: "Le quiz a été supprimé.",
       });
     }
   };
@@ -79,16 +84,63 @@ const Admin = () => {
     document.body.removeChild(link);
     
     toast({
-      title: "CSV Exported",
-      description: "Vendor progress data has been downloaded.",
+      title: "CSV Exporté",
+      description: "Les données de progression des vendeurs ont été téléchargées.",
     });
   };
 
   const handleUpdateXPSettings = () => {
     toast({
-      title: "Settings Updated",
-      description: "XP rewards have been updated successfully.",
+      title: "Paramètres Mis à Jour",
+      description: "Les récompenses XP ont été mises à jour avec succès.",
     });
+  };
+
+  const handleTicketResponse = (ticketId: number, status: 'open' | 'in-progress' | 'closed') => {
+    updateTicketStatus(ticketId, status, adminResponse);
+    setAdminResponse("");
+    setSelectedTicket(null);
+    
+    toast({
+      title: "Ticket Mis à Jour",
+      description: `Le ticket a été marqué comme ${status === 'closed' ? 'fermé' : status === 'in-progress' ? 'en cours' : 'ouvert'}.`,
+    });
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'open': return <Clock className="w-4 h-4 text-orange-500" />;
+      case 'in-progress': return <AlertCircle className="w-4 h-4 text-blue-500" />;
+      case 'closed': return <CheckCircle className="w-4 h-4 text-green-500" />;
+      default: return <Clock className="w-4 h-4" />;
+    }
+  };
+
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'bug': return <Bug className="w-4 h-4 text-red-500" />;
+      case 'question': return <MessageSquare className="w-4 h-4 text-blue-500" />;
+      case 'improvement': return <Lightbulb className="w-4 h-4 text-yellow-500" />;
+      default: return <MessageSquare className="w-4 h-4" />;
+    }
+  };
+
+  const getCategoryLabel = (category: string) => {
+    switch (category) {
+      case 'bug': return 'Bug';
+      case 'question': return 'Question';
+      case 'improvement': return 'Amélioration';
+      default: return category;
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'open': return 'Ouvert';
+      case 'in-progress': return 'En cours';
+      case 'closed': return 'Fermé';
+      default: return status;
+    }
   };
 
   return (
@@ -99,8 +151,8 @@ const Admin = () => {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-2xl text-blue-800">Admin Learning Center 🎓</CardTitle>
-                <p className="text-blue-600">Manage content, track progress, and configure gamification</p>
+                <CardTitle className="text-2xl text-blue-800">Centre d'Apprentissage Admin 🎓</CardTitle>
+                <p className="text-blue-600">Gérez le contenu, suivez la progression et configurez la gamification</p>
               </div>
               <div className="text-4xl">🚀</div>
             </div>
@@ -118,6 +170,11 @@ const Admin = () => {
             >
               <tab.icon className="w-4 h-4" />
               <span>{tab.label}</span>
+              {tab.id === 'tickets' && tickets.filter(t => t.status === 'open').length > 0 && (
+                <Badge className="bg-red-500 text-white ml-2">
+                  {tickets.filter(t => t.status === 'open').length}
+                </Badge>
+              )}
             </Button>
           ))}
         </div>
@@ -128,7 +185,7 @@ const Admin = () => {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center space-x-2">
                 <BookOpen className="w-5 h-5" />
-                <span>Lesson Management</span>
+                <span>Gestion des Cours</span>
               </CardTitle>
               <Button 
                 className="bg-green-500 hover:bg-green-600"
@@ -138,16 +195,16 @@ const Admin = () => {
                 }}
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Add New Lesson
+                Ajouter un Nouveau Cours
               </Button>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Level Required</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>Titre</TableHead>
+                    <TableHead>Niveau Requis</TableHead>
+                    <TableHead>Statut</TableHead>
                     <TableHead>Points</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -157,7 +214,7 @@ const Admin = () => {
                     <TableRow key={lesson.id}>
                       <TableCell className="font-medium">{lesson.title}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">Level {lesson.levelRequired}</Badge>
+                        <Badge variant="outline">Niveau {lesson.levelRequired}</Badge>
                       </TableCell>
                       <TableCell>
                         <Badge className={lesson.status === "completed" ? "bg-green-500" : "bg-yellow-500"}>
@@ -200,7 +257,7 @@ const Admin = () => {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center space-x-2">
                 <Award className="w-5 h-5" />
-                <span>Quiz Management</span>
+                <span>Gestion des Quiz</span>
               </CardTitle>
               <Button 
                 className="bg-purple-500 hover:bg-purple-600"
@@ -210,7 +267,7 @@ const Admin = () => {
                 }}
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Add New Quiz
+                Ajouter un Nouveau Quiz
               </Button>
             </CardHeader>
             <CardContent>
@@ -221,7 +278,7 @@ const Admin = () => {
                       <div>
                         <h4 className="font-semibold">{quiz.question}</h4>
                         <p className="text-sm text-gray-600">
-                          Linked to: {lessons.find(l => l.id === quiz.lessonId)?.title}
+                          Lié à : {lessons.find(l => l.id === quiz.lessonId)?.title}
                         </p>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -262,29 +319,149 @@ const Admin = () => {
           </Card>
         )}
 
+        {activeTab === "tickets" && (
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <MessageSquare className="w-5 h-5" />
+                <span>Gestion des Tickets Support</span>
+                <Badge className="bg-blue-500 text-white">
+                  {tickets.length} total
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {tickets.map((ticket) => (
+                  <Card key={ticket.id} className="border">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start space-x-3">
+                          {getCategoryIcon(ticket.category)}
+                          <div>
+                            <h4 className="font-semibold">{ticket.title}</h4>
+                            <p className="text-sm text-gray-600">
+                              Par {ticket.vendorName} • #{ticket.id} • {ticket.createdAt}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant="outline">
+                            {getCategoryLabel(ticket.category)}
+                          </Badge>
+                          <Badge className="flex items-center space-x-1">
+                            {getStatusIcon(ticket.status)}
+                            <span>{getStatusLabel(ticket.status)}</span>
+                          </Badge>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-gray-700 mb-4">{ticket.description}</p>
+                      
+                      {ticket.adminResponse && (
+                        <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded mb-4">
+                          <h4 className="font-semibold text-blue-800 mb-2">Réponse envoyée :</h4>
+                          <p className="text-blue-700">{ticket.adminResponse}</p>
+                        </div>
+                      )}
+
+                      {selectedTicket?.id === ticket.id ? (
+                        <div className="space-y-4">
+                          <div>
+                            <Label htmlFor="response">Réponse administrative</Label>
+                            <Textarea
+                              id="response"
+                              value={adminResponse}
+                              onChange={(e) => setAdminResponse(e.target.value)}
+                              placeholder="Tapez votre réponse..."
+                              rows={3}
+                            />
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button 
+                              size="sm"
+                              onClick={() => handleTicketResponse(ticket.id, 'in-progress')}
+                              className="bg-blue-500 hover:bg-blue-600"
+                            >
+                              Marquer en cours
+                            </Button>
+                            <Button 
+                              size="sm"
+                              onClick={() => handleTicketResponse(ticket.id, 'closed')}
+                              className="bg-green-500 hover:bg-green-600"
+                            >
+                              Fermer le ticket
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => setSelectedTicket(null)}
+                            >
+                              Annuler
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex space-x-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => setSelectedTicket(ticket)}
+                          >
+                            Répondre
+                          </Button>
+                          {ticket.status === 'open' && (
+                            <Button 
+                              size="sm"
+                              onClick={() => handleTicketResponse(ticket.id, 'in-progress')}
+                              className="bg-blue-500 hover:bg-blue-600"
+                            >
+                              Prendre en charge
+                            </Button>
+                          )}
+                          {ticket.status !== 'closed' && (
+                            <Button 
+                              size="sm"
+                              onClick={() => handleTicketResponse(ticket.id, 'closed')}
+                              className="bg-gray-500 hover:bg-gray-600"
+                            >
+                              Fermer
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {activeTab === "vendors" && (
           <Card className="shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center space-x-2">
                 <Users className="w-5 h-5" />
-                <span>Vendor Progress Tracking</span>
+                <span>Suivi de Progression des Vendeurs</span>
               </CardTitle>
               <Button variant="outline" onClick={handleExportCSV}>
                 <Download className="w-4 h-4 mr-2" />
-                Export CSV
+                Exporter CSV
               </Button>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Username</TableHead>
+                    <TableHead>Nom d'utilisateur</TableHead>
                     <TableHead>Email</TableHead>
-                    <TableHead>Level</TableHead>
+                    <TableHead>Niveau</TableHead>
                     <TableHead>XP</TableHead>
-                    <TableHead>Lessons</TableHead>
-                    <TableHead>Quizzes</TableHead>
-                    <TableHead>Last Active</TableHead>
+                    <TableHead>Cours</TableHead>
+                    <TableHead>Quiz</TableHead>
+                    <TableHead>Dernière activité</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -293,7 +470,7 @@ const Admin = () => {
                       <TableCell className="font-medium">{vendor.username}</TableCell>
                       <TableCell>{vendor.email}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">Level {vendor.level}</Badge>
+                        <Badge variant="outline">Niveau {vendor.level}</Badge>
                       </TableCell>
                       <TableCell>{vendor.xp} XP</TableCell>
                       <TableCell>{vendor.lessonsCompleted}</TableCell>
@@ -311,11 +488,11 @@ const Admin = () => {
           <div className="grid md:grid-cols-2 gap-6">
             <Card className="shadow-lg">
               <CardHeader>
-                <CardTitle>XP Rewards</CardTitle>
+                <CardTitle>Récompenses XP</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="videoXP">Watching a video</Label>
+                  <Label htmlFor="videoXP">Regarder une vidéo</Label>
                   <Input
                     id="videoXP"
                     type="number"
@@ -324,7 +501,7 @@ const Admin = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="quizXP">Passing a quiz</Label>
+                  <Label htmlFor="quizXP">Réussir un quiz</Label>
                   <Input
                     id="quizXP"
                     type="number"
@@ -333,7 +510,7 @@ const Admin = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="streakXP">Daily login streak</Label>
+                  <Label htmlFor="streakXP">Série de connexion quotidienne</Label>
                   <Input
                     id="streakXP"
                     type="number"
@@ -342,68 +519,80 @@ const Admin = () => {
                   />
                 </div>
                 <Button className="w-full" onClick={handleUpdateXPSettings}>
-                  Update Settings
+                  Mettre à Jour les Paramètres
                 </Button>
               </CardContent>
             </Card>
 
             <Card className="shadow-lg">
               <CardHeader>
-                <CardTitle>Level Progression</CardTitle>
+                <CardTitle>Progression des Niveaux</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   {[
-                    { level: 1, title: "Marketplace Newbie", requiredXp: 0 },
-                    { level: 2, title: "Marketplace Explorer", requiredXp: 100 },
-                    { level: 3, title: "Dashboard Guru", requiredXp: 300 },
-                    { level: 4, title: "Listing Legend", requiredXp: 600 },
-                    { level: 5, title: "Super Seller", requiredXp: 1000 }
+                    { level: 1, title: "Novice Marketplace", requiredXp: 0 },
+                    { level: 2, title: "Explorateur Marketplace", requiredXp: 100 },
+                    { level: 3, title: "Guru Dashboard", requiredXp: 300 },
+                    { level: 4, title: "Légende des Listes", requiredXp: 600 },
+                    { level: 5, title: "Super Vendeur", requiredXp: 1000 }
                   ].map((level) => (
                     <div key={level.level} className="flex justify-between items-center p-2 border rounded">
                       <div>
-                        <span className="font-medium">Level {level.level}</span>
+                        <span className="font-medium">Niveau {level.level}</span>
                         <p className="text-sm text-gray-600">{level.title}</p>
                       </div>
                       <Badge variant="outline">{level.requiredXp} XP</Badge>
                     </div>
                   ))}
                 </div>
-                <Button className="w-full mt-4">Edit Levels</Button>
+                <Button className="w-full mt-4">Modifier les Niveaux</Button>
               </CardContent>
             </Card>
           </div>
         )}
 
         {activeTab === "analytics" && (
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-4 gap-6">
             <Card className="shadow-lg">
               <CardHeader>
-                <CardTitle className="text-lg">Total Vendors</CardTitle>
+                <CardTitle className="text-lg">Total Vendeurs</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-blue-600">{vendors.length}</div>
-                <p className="text-sm text-gray-600">+2 this week</p>
+                <p className="text-sm text-gray-600">+2 cette semaine</p>
               </CardContent>
             </Card>
 
             <Card className="shadow-lg">
               <CardHeader>
-                <CardTitle className="text-lg">Total Lessons</CardTitle>
+                <CardTitle className="text-lg">Total Cours</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-green-600">{lessons.length}</div>
-                <p className="text-sm text-gray-600">Active content</p>
+                <p className="text-sm text-gray-600">Contenu actif</p>
               </CardContent>
             </Card>
 
             <Card className="shadow-lg">
               <CardHeader>
-                <CardTitle className="text-lg">Total Quizzes</CardTitle>
+                <CardTitle className="text-lg">Total Quiz</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-purple-600">{quizzes.length}</div>
-                <p className="text-sm text-gray-600">Knowledge checks</p>
+                <p className="text-sm text-gray-600">Vérifications de connaissances</p>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-lg">Tickets Support</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-orange-600">{tickets.length}</div>
+                <p className="text-sm text-gray-600">
+                  {tickets.filter(t => t.status === 'open').length} ouverts
+                </p>
               </CardContent>
             </Card>
           </div>

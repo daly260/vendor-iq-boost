@@ -1,14 +1,14 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Star, Calendar, Users, Coins, Settings } from "lucide-react";
+import { Trophy, Star, Calendar, Users, Coins, Settings, MessageSquare } from "lucide-react";
 import { Link } from "react-router-dom";
 import { QuizModal } from "@/components/QuizModal";
 import { LessonModal } from "@/components/LessonModal";
 import { useLearning } from "@/contexts/LearningContext";
+import { useTickets } from "@/contexts/TicketContext";
 
 const Index = () => {
   const {
@@ -20,6 +20,9 @@ const Index = () => {
     completeLesson,
     completeQuiz
   } = useLearning();
+  
+  const { getOpenTicketsCount } = useTickets();
+  const openTicketsCount = getOpenTicketsCount();
   
   const [nextLevelXP] = useState(300);
   const [selectedLesson, setSelectedLesson] = useState<any>(null);
@@ -70,7 +73,7 @@ const Index = () => {
           className="w-full bg-green-500 hover:bg-green-600"
           onClick={() => handleLessonClick(lesson)}
         >
-          Review Again 🔄
+          Revoir le cours 🔄
         </Button>
       );
     } else if (lesson.status === "in-progress") {
@@ -79,7 +82,7 @@ const Index = () => {
           className="w-full bg-blue-500 hover:bg-blue-600"
           onClick={() => handleLessonClick(lesson)}
         >
-          Continue Learning 📚
+          Continuer 📚
         </Button>
       );
     } else if (lesson.status === "available") {
@@ -88,11 +91,11 @@ const Index = () => {
           className="w-full bg-yellow-500 hover:bg-yellow-600 text-black"
           onClick={() => handleLessonClick(lesson)}
         >
-          Start Lesson 🚀
+          Commencer 🚀
         </Button>
       );
     } else {
-      return <Button disabled className="w-full">Unlock at Level {lesson.levelRequired} 🔒</Button>;
+      return <Button disabled className="w-full">Niveau {lesson.levelRequired} requis 🔒</Button>;
     }
   };
 
@@ -101,13 +104,26 @@ const Index = () => {
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Navigation Header */}
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-purple-800">🎓 Vendor Learning Center</h1>
-          <Link to="/admin">
-            <Button variant="outline" className="flex items-center space-x-2">
-              <Settings className="w-4 h-4" />
-              <span>Admin Panel</span>
-            </Button>
-          </Link>
+          <h1 className="text-3xl font-bold text-purple-800">🎓 Centre d'Apprentissage Vendeur</h1>
+          <div className="flex space-x-3">
+            <Link to="/support">
+              <Button variant="outline" className="flex items-center space-x-2 relative">
+                <MessageSquare className="w-4 h-4" />
+                <span>Support</span>
+                {openTicketsCount > 0 && (
+                  <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                    {openTicketsCount}
+                  </Badge>
+                )}
+              </Button>
+            </Link>
+            <Link to="/admin">
+              <Button variant="outline" className="flex items-center space-x-2">
+                <Settings className="w-4 h-4" />
+                <span>Admin</span>
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Learning Progress Header */}
@@ -117,31 +133,31 @@ const Index = () => {
               <div className="flex items-center space-x-4">
                 <div className="text-6xl animate-bounce">😎</div>
                 <div>
-                  <h1 className="text-2xl font-bold text-purple-800">Vendor IQ Meter</h1>
-                  <p className="text-lg text-purple-600">Level {currentLevel} – Marketplace Explorer</p>
-                  <p className="text-sm text-purple-500">{currentXP} XP – Keep it up, entrepreneur! 🎉</p>
+                  <h1 className="text-2xl font-bold text-purple-800">Compteur d'IQ Vendeur</h1>
+                  <p className="text-lg text-purple-600">Niveau {currentLevel} – Explorateur Marketplace</p>
+                  <p className="text-sm text-purple-500">{currentXP} XP – Continue comme ça, entrepreneur ! 🎉</p>
                 </div>
               </div>
               <div className="text-right">
                 <div className="flex items-center space-x-2 mb-2">
-                  <span className="text-sm font-medium">Daily Streak:</span>
+                  <span className="text-sm font-medium">Série quotidienne :</span>
                   <Badge className="bg-orange-500 text-white animate-pulse">
-                    🔥 {dailyStreak} days
+                    🔥 {dailyStreak} jours
                   </Badge>
                 </div>
-                <p className="text-xs text-gray-600">You're on fire!</p>
+                <p className="text-xs text-gray-600">Tu es en feu !</p>
               </div>
             </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span>Progress to Level {currentLevel + 1}</span>
+                <span>Progression vers le Niveau {currentLevel + 1}</span>
                 <span>{currentXP}/{nextLevelXP} XP</span>
               </div>
               <Progress value={(currentXP / nextLevelXP) * 100} className="h-3" />
               <p className="text-xs text-center text-purple-600">
-                Just {nextLevelXP - currentXP} XP to unlock "Dashboard Guru" level! 🏆
+                Plus que {nextLevelXP - currentXP} XP pour débloquer le niveau "Guru Dashboard" ! 🏆
               </p>
             </div>
           </CardContent>
@@ -154,7 +170,7 @@ const Index = () => {
             <div>
               <h2 className="text-2xl font-bold mb-6 text-gray-800 flex items-center">
                 <Star className="mr-2 text-yellow-500" />
-                Your Learning Journey
+                Votre Parcours d'Apprentissage
               </h2>
               <div className="grid md:grid-cols-2 gap-6">
                 {lessons.map((lesson) => (
@@ -173,10 +189,10 @@ const Index = () => {
                           <span>{lesson.points} XP</span>
                         </Badge>
                         {lesson.status === "completed" && (
-                          <Badge className="bg-green-500 text-white">✅ Completed</Badge>
+                          <Badge className="bg-green-500 text-white">✅ Terminé</Badge>
                         )}
                         {lesson.status === "locked" && (
-                          <Badge variant="outline">🔒 Level {lesson.levelRequired}</Badge>
+                          <Badge variant="outline">🔒 Niveau {lesson.levelRequired}</Badge>
                         )}
                       </div>
                     </CardHeader>
@@ -185,7 +201,7 @@ const Index = () => {
                       {lesson.progress > 0 && (
                         <div className="space-y-1">
                           <div className="flex justify-between text-sm">
-                            <span>Progress</span>
+                            <span>Progression</span>
                             <span>{lesson.progress}%</span>
                           </div>
                           <Progress value={lesson.progress} className="h-2" />
@@ -203,7 +219,7 @@ const Index = () => {
               <CardHeader>
                 <CardTitle className="flex items-center text-xl">
                   <Trophy className="mr-2 text-yellow-600" />
-                  Achievement Showcase
+                  Vitrine des Réalisations
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -224,7 +240,7 @@ const Index = () => {
                           <p className="text-sm text-gray-600">{achievement.description}</p>
                         </div>
                         {achievement.unlocked && (
-                          <Badge className="bg-green-500 text-white ml-auto">Unlocked!</Badge>
+                          <Badge className="bg-green-500 text-white ml-auto">Débloqué !</Badge>
                         )}
                       </div>
                     </div>
@@ -241,15 +257,15 @@ const Index = () => {
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center text-lg">
                   <Calendar className="mr-2 text-orange-600" />
-                  Streak Power! 🔥
+                  Puissance de Série ! 🔥
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-center space-y-3">
                   <div className="text-3xl font-bold text-orange-600">{dailyStreak}</div>
-                  <p className="text-sm">Days in a row!</p>
+                  <p className="text-sm">Jours d'affilée !</p>
                   <div className="grid grid-cols-7 gap-1 text-xs">
-                    {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
+                    {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((day, i) => (
                       <div 
                         key={i} 
                         className={`w-8 h-8 rounded flex items-center justify-center ${
@@ -261,7 +277,7 @@ const Index = () => {
                     ))}
                   </div>
                   <Button size="sm" className="w-full bg-orange-500 hover:bg-orange-600">
-                    Take Daily Quiz! 🧠
+                    Quiz quotidien ! 🧠
                   </Button>
                 </div>
               </CardContent>
@@ -272,7 +288,7 @@ const Index = () => {
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center text-lg">
                   <Users className="mr-2 text-purple-600" />
-                  Top Learners 🏆
+                  Top Apprenants 🏆
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -289,7 +305,7 @@ const Index = () => {
                         <span className="text-xl">{user.avatar}</span>
                       </div>
                       <div className="flex-1">
-                        <p className="font-semibold text-sm">{user.name}</p>
+                        <p className="font-semibold text-sm">{user.name === "You" ? "Vous" : user.name}</p>
                         <p className="text-xs text-gray-600">{user.level}</p>
                       </div>
                       <Badge variant="outline" className="text-xs">
@@ -306,9 +322,9 @@ const Index = () => {
               <CardContent className="pt-6">
                 <div className="text-center space-y-3">
                   <div className="text-3xl">💡</div>
-                  <p className="text-sm font-medium text-green-800">Psst... Daily Tip!</p>
+                  <p className="text-sm font-medium text-green-800">Psst... Conseil du jour !</p>
                   <p className="text-xs text-green-700">
-                    Complete a lesson before noon to earn bonus XP! ⏰
+                    Terminez un cours avant midi pour gagner des XP bonus ! ⏰
                   </p>
                 </div>
               </CardContent>
